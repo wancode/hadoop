@@ -3293,12 +3293,16 @@ public class TestFairScheduler extends FairSchedulerTestBase {
     scheduler.handle(node2UpdateEvent);
     if (invalid) {
       assertEquals(0, app.getLiveContainers().size());
-      assertEquals(0, scheduler.getNode(node2.getNodeID()).getNumContainers());
-      assertEquals(0, scheduler.getNode(node1.getNodeID()).getNumContainers());
+      assertEquals(0,
+          scheduler.getNode(node2.getNodeID()).getNumGuaranteedContainers());
+      assertEquals(0,
+          scheduler.getNode(node1.getNodeID()).getNumGuaranteedContainers());
     } else {
       assertEquals(1, app.getLiveContainers().size());
-      assertEquals(1, scheduler.getNode(node2.getNodeID()).getNumContainers());
-      assertEquals(0, scheduler.getNode(node1.getNodeID()).getNumContainers());
+      assertEquals(1,
+          scheduler.getNode(node2.getNodeID()).getNumGuaranteedContainers());
+      assertEquals(0,
+          scheduler.getNode(node1.getNodeID()).getNumGuaranteedContainers());
     }
   }
 
@@ -5024,7 +5028,7 @@ public class TestFairScheduler extends FairSchedulerTestBase {
     // Check total resource of scheduler node is also changed to 0 GB 0 core
     Resource totalResource =
         resourceManager.getResourceScheduler()
-            .getSchedulerNode(nm_0.getNodeId()).getTotalResource();
+            .getSchedulerNode(nm_0.getNodeId()).getCapacity();
     Assert.assertEquals(totalResource.getMemorySize(), 0 * GB);
     Assert.assertEquals(totalResource.getVirtualCores(), 0);
     // Check the available resource is 0/0

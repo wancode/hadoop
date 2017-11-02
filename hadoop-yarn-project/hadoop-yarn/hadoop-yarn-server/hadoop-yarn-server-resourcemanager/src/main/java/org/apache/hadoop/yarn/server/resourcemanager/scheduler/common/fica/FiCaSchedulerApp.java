@@ -978,7 +978,7 @@ public class FiCaSchedulerApp extends SchedulerApplicationAttempt {
       diagnosticMessageBldr.append(" ( Partition : ");
       diagnosticMessageBldr.append(node.getLabels());
       diagnosticMessageBldr.append(", Total resource : ");
-      diagnosticMessageBldr.append(node.getTotalResource());
+      diagnosticMessageBldr.append(node.getCapacity());
       diagnosticMessageBldr.append(", Available resource : ");
       diagnosticMessageBldr.append(node.getUnallocatedResource());
       diagnosticMessageBldr.append(" ).");

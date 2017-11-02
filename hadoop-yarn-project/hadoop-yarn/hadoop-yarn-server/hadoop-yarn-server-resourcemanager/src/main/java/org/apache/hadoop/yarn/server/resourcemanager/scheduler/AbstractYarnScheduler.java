@@ -352,7 +352,7 @@ public abstract class AbstractYarnScheduler
       }
 
       application.containerLaunchedOnNode(containerId, node.getNodeID());
-      node.containerStarted(containerId);
+      node.containerLaunched(containerId);
     } finally {
       readLock.unlock();
     }
@@ -817,7 +817,7 @@ public abstract class AbstractYarnScheduler
       writeLock.lock();
       SchedulerNode node = getSchedulerNode(nm.getNodeID());
       Resource newResource = resourceOption.getResource();
-      Resource oldResource = node.getTotalResource();
+      Resource oldResource = node.getCapacity();
       if (!oldResource.equals(newResource)) {
         // Notify NodeLabelsManager about this change
         rmContext.getNodeLabelManager().updateNodeResource(nm.getNodeID(),

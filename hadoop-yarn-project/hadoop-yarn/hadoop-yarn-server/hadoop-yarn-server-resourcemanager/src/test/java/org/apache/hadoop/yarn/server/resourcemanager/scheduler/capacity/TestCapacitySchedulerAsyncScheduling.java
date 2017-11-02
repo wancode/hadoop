@@ -218,8 +218,8 @@ public class TestCapacitySchedulerAsyncScheduling {
 
     // nm1 runs 1 container(app1-container_01/AM)
     // nm2 runs 1 container(app1-container_02)
-    Assert.assertEquals(1, sn1.getNumContainers());
-    Assert.assertEquals(1, sn2.getNumContainers());
+    Assert.assertEquals(1, sn1.getNumGuaranteedContainers());
+    Assert.assertEquals(1, sn2.getNumGuaranteedContainers());
 
     // kill app attempt1
     scheduler.handle(
@@ -314,8 +314,8 @@ public class TestCapacitySchedulerAsyncScheduling {
     // nm1 runs 3 containers(app1-container_01/AM, app1-container_02,
     //                       app2-container_01/AM)
     // nm2 runs 1 container(app1-container_03)
-    Assert.assertEquals(3, sn1.getNumContainers());
-    Assert.assertEquals(1, sn2.getNumContainers());
+    Assert.assertEquals(3, sn1.getNumGuaranteedContainers());
+    Assert.assertEquals(1, sn2.getNumGuaranteedContainers());
 
     // reserve 1 container(app1-container_04) for app1 on nm1
     ResourceRequest rr2 = ResourceRequest

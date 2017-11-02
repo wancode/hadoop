@@ -32,6 +32,7 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.ResourceUtilization;
 import org.apache.hadoop.yarn.server.api.protocolrecords.NodeHeartbeatResponse;
 import org.apache.hadoop.yarn.server.api.records.OpportunisticContainersStatus;
+import org.apache.hadoop.yarn.server.api.records.OverAllocationInfo;
 
 /**
  * Node managers information on available resources 
@@ -112,6 +113,12 @@ public interface RMNode {
    * @return the total resource utilization of the node.
    */
   public ResourceUtilization getNodeUtilization();
+
+  /**
+   * Get the node overallocation threshold.
+   * @return the overallocation threshold
+   */
+  OverAllocationInfo getOverAllocationInfo();
 
   /**
    * the physical resources in the node.
