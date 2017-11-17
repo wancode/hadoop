@@ -90,8 +90,8 @@ public class FairSharePolicy extends SchedulingPolicy {
       int res = compareDemand(s1, s2);
 
       // Pre-compute resource usages to avoid duplicate calculation
-      Resource resourceUsage1 = s1.getResourceUsage();
-      Resource resourceUsage2 = s2.getResourceUsage();
+      Resource resourceUsage1 = s1.getGuaranteedResourceUsage();
+      Resource resourceUsage2 = s2.getGuaranteedResourceUsage();
 
       if (res == 0) {
         res = compareMinShareUsage(s1, s2, resourceUsage1, resourceUsage2);
