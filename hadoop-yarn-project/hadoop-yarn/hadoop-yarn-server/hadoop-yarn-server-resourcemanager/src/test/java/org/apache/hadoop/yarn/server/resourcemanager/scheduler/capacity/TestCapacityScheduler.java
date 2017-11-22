@@ -1267,8 +1267,10 @@ public class TestCapacityScheduler {
     SchedulerNodeReport report_nm1 = rm.getResourceScheduler().getNodeReport(
         nm1.getNodeId());
     // check node report, 2 GB used and 2 GB available
-    Assert.assertEquals(2 * GB, report_nm1.getUsedResource().getMemorySize());
-    Assert.assertEquals(2 * GB, report_nm1.getAvailableResource().getMemorySize());
+    Assert.assertEquals(2 * GB,
+        report_nm1.getGuaranteedResourceUsed().getMemorySize());
+    Assert.assertEquals(2 * GB,
+        report_nm1.getAvailableGuaranteedResource().getMemorySize());
 
     // add request for containers
     am1.addRequests(new String[] { "127.0.0.1", "127.0.0.2" }, 2 * GB, 1, 1);
@@ -1289,8 +1291,10 @@ public class TestCapacityScheduler {
 
     report_nm1 = rm.getResourceScheduler().getNodeReport(nm1.getNodeId());
     // check node report, 4 GB used and 0 GB available
-    Assert.assertEquals(0, report_nm1.getAvailableResource().getMemorySize());
-    Assert.assertEquals(4 * GB, report_nm1.getUsedResource().getMemorySize());
+    Assert.assertEquals(0,
+        report_nm1.getAvailableGuaranteedResource().getMemorySize());
+    Assert.assertEquals(4 * GB,
+        report_nm1.getGuaranteedResourceUsed().getMemorySize());
 
     // check container is assigned with 2 GB.
     Container c1 = allocated1.get(0);
@@ -1309,7 +1313,7 @@ public class TestCapacityScheduler {
     waitCount = 0;
     while (waitCount++ != 20) {
       report_nm1 = rm.getResourceScheduler().getNodeReport(nm1.getNodeId());
-      if (report_nm1.getAvailableResource().getMemorySize() != 0) {
+      if (report_nm1.getAvailableGuaranteedResource().getMemorySize() != 0) {
         break;
       }
       LOG.info("Waiting for RMNodeResourceUpdateEvent to be handled... Tried "
@@ -1318,8 +1322,10 @@ public class TestCapacityScheduler {
     }
     // Now, the used resource is still 4 GB, and available resource is minus value.
     report_nm1 = rm.getResourceScheduler().getNodeReport(nm1.getNodeId());
-    Assert.assertEquals(4 * GB, report_nm1.getUsedResource().getMemorySize());
-    Assert.assertEquals(-2 * GB, report_nm1.getAvailableResource().getMemorySize());
+    Assert.assertEquals(4 * GB,
+        report_nm1.getGuaranteedResourceUsed().getMemorySize());
+    Assert.assertEquals(-2 * GB,
+        report_nm1.getAvailableGuaranteedResource().getMemorySize());
 
     // Check container can complete successfully in case of resource over-commitment.
     ContainerStatus containerStatus = BuilderUtils.newContainerStatus(
@@ -1335,9 +1341,11 @@ public class TestCapacityScheduler {
     Assert.assertEquals(1, attempt1.getJustFinishedContainers().size());
     Assert.assertEquals(1, am1.schedule().getCompletedContainersStatuses().size());
     report_nm1 = rm.getResourceScheduler().getNodeReport(nm1.getNodeId());
-    Assert.assertEquals(2 * GB, report_nm1.getUsedResource().getMemorySize());
+    Assert.assertEquals(2 * GB,
+        report_nm1.getGuaranteedResourceUsed().getMemorySize());
     // As container return 2 GB back, the available resource becomes 0 again.
-    Assert.assertEquals(0 * GB, report_nm1.getAvailableResource().getMemorySize());
+    Assert.assertEquals(0 * GB,
+        report_nm1.getAvailableGuaranteedResource().getMemorySize());
 
     // Verify no NPE is trigger in schedule after resource is updated.
     am1.addRequests(new String[] { "127.0.0.1", "127.0.0.2" }, 3 * GB, 1, 1);
@@ -2837,8 +2845,10 @@ public class TestCapacityScheduler {
         rm.getResourceScheduler().getNodeReport(nm1.getNodeId());
 
     // check node report
-    Assert.assertEquals(1 * GB, report_nm1.getUsedResource().getMemorySize());
-    Assert.assertEquals(9 * GB, report_nm1.getAvailableResource().getMemorySize());
+    Assert.assertEquals(1 * GB,
+        report_nm1.getGuaranteedResourceUsed().getMemorySize());
+    Assert.assertEquals(9 * GB,
+        report_nm1.getAvailableGuaranteedResource().getMemorySize());
 
     // add request for containers
     am1.addRequests(new String[] { "127.0.0.1", "127.0.0.2" }, 1 * GB, 1, 1);

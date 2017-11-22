@@ -1352,7 +1352,8 @@ public class TestYarnCLI {
     pw.println("                           0");
     pw.println("Detailed Node Information :");
     pw.println("\tConfigured Resources : <memory:0, vCores:0>");
-    pw.println("\tAllocated Resources : <memory:0, vCores:0>");
+    pw.println("\tAllocated Guaranteed Resources : <memory:0, vCores:0>");
+    pw.println("\tAllocated Opportunistic Resources : <memory:0, vCores:0>");
     pw.println("\tResource Utilization by Node : PMem:2048 MB, VMem:4096 MB, VCores:8.0");
     pw.println("\tResource Utilization by Containers : PMem:1024 MB, VMem:2048 MB, VCores:4.0");
     pw.println("\tNode-Labels : ");
@@ -1360,7 +1361,8 @@ public class TestYarnCLI {
     pw.println("                           0");
     pw.println("Detailed Node Information :");
     pw.println("\tConfigured Resources : <memory:0, vCores:0>");
-    pw.println("\tAllocated Resources : <memory:0, vCores:0>");
+    pw.println("\tAllocated Guaranteed Resources : <memory:0, vCores:0>");
+    pw.println("\tAllocated Opportunistic Resources : <memory:0, vCores:0>");
     pw.println("\tResource Utilization by Node : PMem:2048 MB, VMem:4096 MB, VCores:8.0");
     pw.println("\tResource Utilization by Containers : PMem:1024 MB, VMem:2048 MB, VCores:4.0");
     pw.println("\tNode-Labels : ");
@@ -1561,10 +1563,13 @@ public class TestYarnCLI {
     pw.println("\tLast-Health-Update : "
       + DateFormatUtils.format(new Date(0), "E dd/MMM/yy hh:mm:ss:SSzz"));
     pw.println("\tHealth-Report : ");
-    pw.println("\tContainers : 0");
-    pw.println("\tMemory-Used : 0MB");
+    pw.println("\tGuaranteed Containers : 0");
+    pw.println("\tOpportunistic Containers : 0");
+    pw.println("\tGuaranteed-Memory-Used : 0MB");
+    pw.println("\tOpportunistic-Memory-Used : 0MB");
     pw.println("\tMemory-Capacity : 0MB");
-    pw.println("\tCPU-Used : 0 vcores");
+    pw.println("\tGuaranteed-CPU-Used : 0 vcores");
+    pw.println("\tOpportunistic-CPU-Used : 0 vcores");
     pw.println("\tCPU-Capacity : 0 vcores");
     pw.println("\tNode-Labels : a,b,c,x,y,z");
     pw.println("\tResource Utilization by Node : PMem:2048 MB, VMem:4096 MB, VCores:8.0");
@@ -1597,10 +1602,13 @@ public class TestYarnCLI {
     pw.println("\tLast-Health-Update : "
       + DateFormatUtils.format(new Date(0), "E dd/MMM/yy hh:mm:ss:SSzz"));
     pw.println("\tHealth-Report : ");
-    pw.println("\tContainers : 0");
-    pw.println("\tMemory-Used : 0MB");
+    pw.println("\tGuaranteed Containers : 0");
+    pw.println("\tOpportunistic Containers : 0");
+    pw.println("\tGuaranteed-Memory-Used : 0MB");
+    pw.println("\tOpportunistic-Memory-Used : 0MB");
     pw.println("\tMemory-Capacity : 0MB");
-    pw.println("\tCPU-Used : 0 vcores");
+    pw.println("\tGuaranteed-CPU-Used : 0 vcores");
+    pw.println("\tOpportunistic-CPU-Used : 0 vcores");
     pw.println("\tCPU-Capacity : 0 vcores");
     pw.println("\tNode-Labels : ");
     pw.println("\tResource Utilization by Node : PMem:2048 MB, VMem:4096 MB, VCores:8.0");
@@ -1633,10 +1641,13 @@ public class TestYarnCLI {
     pw.println("\tLast-Health-Update : "
       + DateFormatUtils.format(new Date(0), "E dd/MMM/yy hh:mm:ss:SSzz"));
     pw.println("\tHealth-Report : ");
-    pw.println("\tContainers : 0");
-    pw.println("\tMemory-Used : 0MB");
+    pw.println("\tGuaranteed Containers : 0");
+    pw.println("\tOpportunistic Containers : 0");
+    pw.println("\tGuaranteed-Memory-Used : 0MB");
+    pw.println("\tOpportunistic-Memory-Used : 0MB");
     pw.println("\tMemory-Capacity : 0MB");
-    pw.println("\tCPU-Used : 0 vcores");
+    pw.println("\tGuaranteed-CPU-Used : 0 vcores");
+    pw.println("\tOpportunistic-CPU-Used : 0 vcores");
     pw.println("\tCPU-Capacity : 0 vcores");
     pw.println("\tNode-Labels : a,b,c,x,y,z");
     pw.println("\tResource Utilization by Node : ");
@@ -1989,10 +2000,12 @@ public class TestYarnCLI {
         // ordered
         nodeLabels = ImmutableSet.of("c", "b", "a", "x", "z", "y");
       }
-      NodeReport nodeReport = NodeReport.newInstance(NodeId
-        .newInstance("host" + i, 0), state, "host" + 1 + ":8888",
-          "rack1", Records.newRecord(Resource.class), Records
-              .newRecord(Resource.class), 0, "", 0, nodeLabels, null, null);
+      NodeReport nodeReport = NodeReport.newInstance(
+          NodeId.newInstance("host" + i, 0), state, "host" + 1 + ":8888",
+          "rack1", Records.newRecord(Resource.class),
+          Records.newRecord(Resource.class), 0, "",
+          0, nodeLabels, null, null,
+          Records.newRecord(Resource.class), 0);
       if (!emptyResourceUtilization) {
         ResourceUtilization containersUtilization = ResourceUtilization
             .newInstance(1024, 2048, 4);
