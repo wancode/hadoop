@@ -29,11 +29,15 @@ import org.apache.hadoop.yarn.util.resource.Resources;
 public class PendingAsk {
   private final Resource perAllocationResource;
   private final int count;
-  public final static PendingAsk ZERO = new PendingAsk(Resources.none(), 0);
+  private final boolean isGuaranteedTypeEnforced;
 
-  public PendingAsk(Resource res, int num) {
+  public final static PendingAsk ZERO =
+      new PendingAsk(Resources.none(), 0, false);
+
+  public PendingAsk(Resource res, int num, boolean guaranteedTypeEnforced) {
     this.perAllocationResource = res;
     this.count = num;
+    this.isGuaranteedTypeEnforced = guaranteedTypeEnforced;
   }
 
   public Resource getPerAllocationResource() {
@@ -44,11 +48,17 @@ public class PendingAsk {
     return count;
   }
 
+  public boolean isGuaranteedTypeEnforced() {
+    return isGuaranteedTypeEnforced;
+  }
+
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("<per-allocation-resource=");
     sb.append(getPerAllocationResource());
+    sb.append(", isGuaranteedEnforced=");
+    sb.append(isGuaranteedTypeEnforced());
     sb.append(",repeat=");
     sb.append(getCount());
     sb.append(">");
