@@ -20,11 +20,13 @@ package org.apache.hadoop.yarn.server.resourcemanager.rmcontainer;
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -39,7 +41,7 @@ import org.apache.hadoop.yarn.api.records.ExecutionType;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.api.records.ResourceRequest;
+import org.apache.hadoop.yarn.api.records.ResourceInformation;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.hadoop.yarn.server.api.protocolrecords.NMContainerStatus;
@@ -176,7 +178,7 @@ public class RMContainerImpl implements RMContainer {
   private NodeId reservedNode;
   private SchedulerRequestKey reservedSchedulerKey;
   private long creationTime;
-  private long finishTime;
+  private long finishTime = -1L;
   private ContainerStatus finishedStatus;
   private boolean isAMContainer;
   private ContainerRequest containerRequestForRecovery;
@@ -188,6 +190,10 @@ public class RMContainerImpl implements RMContainer {
 
   private boolean isExternallyAllocated;
   private SchedulerRequestKey allocatedSchedulerKey;
+
+  // This is updated whenever the container instance is updated in
+  // the case of container increase/decrease/promotion/demotion
+  private long lastContainerUpdateTime;
 
   public RMContainerImpl(Container container, SchedulerRequestKey schedulerKey,
       ApplicationAttemptId appAttemptId, NodeId nodeId, String user,
@@ -230,6 +236,7 @@ public class RMContainerImpl implements RMContainer {
     this.appAttemptId = appAttemptId;
     this.user = user;
     this.creationTime = creationTime;
+    this.lastContainerUpdateTime = creationTime;
     this.rmContext = rmContext;
     this.eventHandler = rmContext.getDispatcher().getEventHandler();
     this.containerAllocationExpirer = rmContext.getContainerAllocationExpirer();
@@ -277,7 +284,85 @@ public class RMContainerImpl implements RMContainer {
   }
 
   public void setContainer(Container container) {
+    // containers are updated by resetting the underlying Container instance,
+    // always update RMContainer resource usage before the update.
+    updateAppAttemptMetrics(true);
     this.container = container;
+  }
+
+  /**
+   * Collect the resource usage information of the current underlying Container
+   * instance and update its RMAppAttemptMetrics. This is called whenever the
+   * RMContainer is updated (by updating its underlying container) or finishes.
+   * @param containerUpdated if it is called upon container update event
+   */
+  private void updateAppAttemptMetrics(boolean containerUpdated) {
+    RMAppAttempt rmAttempt = rmContext.getRMApps()
+        .get(getApplicationAttemptId().getApplicationId())
+        .getCurrentAppAttempt();
+
+    if (rmAttempt != null) {
+      // collect resource usage information of the current Container instance
+      ContainerResourceUsageReport resourceUsage =
+          getCurrentContainerResourceUsage(containerUpdated);
+
+      // If this is a preempted container, update preemption metrics
+      if (finishedStatus != null &&
+          ContainerExitStatus.PREEMPTED == finishedStatus.getExitStatus()) {
+        rmAttempt.getRMAppAttemptMetrics()
+            .updatePreemptionInfo(container.getResource(), this);
+        rmAttempt.getRMAppAttemptMetrics()
+            .updateAggregateAppOpportunisticResourceUsage(
+                resourceUsage.getGuaranteedResourceUsageSecondsMap());
+      }
+      rmAttempt.getRMAppAttemptMetrics()
+          .updateAggregateAppOpportunisticResourceUsage(
+              resourceUsage.getOpportunisticResourceSecondsMap());
+      rmAttempt.getRMAppAttemptMetrics()
+          .updateAggregateAppGuaranteedResourceUsage(
+              resourceUsage.getGuaranteedResourceUsageSecondsMap());
+    }
+  }
+
+  /**
+   * Get resource usage of the current underlying Container instance.
+   * @param containerUpdated if this is called upon container update
+   * @return resource usage of the current <code>container</code>
+   */
+  private ContainerResourceUsageReport getCurrentContainerResourceUsage(
+      boolean containerUpdated) {
+    ContainerResourceUsageReport report;
+
+    // A container generates usage until it finishes which is indicated
+    // by a positive finish timestamp that is set once it finishes
+    final long currentTimeMillis =
+        finishTime < 0 ? System.currentTimeMillis() : finishTime;
+    final long usedSeconds = (currentTimeMillis -
+        lastContainerUpdateTime) / DateUtils.MILLIS_PER_SECOND;
+    Resource resource = container.getResource();
+
+    if (container.getExecutionType() == ExecutionType.GUARANTEED) {
+      Map<String, Long> guaranteedResourceSeconds = new HashMap<>(2);
+      for (ResourceInformation entry : resource.getResources()) {
+        guaranteedResourceSeconds.put(
+            entry.getName(), entry.getValue() * usedSeconds);
+      }
+      report = new ContainerResourceUsageReport(guaranteedResourceSeconds,
+          Collections.emptyMap());
+    } else {
+      Map<String, Long> opportunisticResourceSeconds = new HashMap<>(2);
+      for (ResourceInformation entry : resource.getResources()) {
+        opportunisticResourceSeconds.put(
+            entry.getName(), entry.getValue() * usedSeconds);
+      }
+      report = new ContainerResourceUsageReport(Collections.emptyMap(),
+          opportunisticResourceSeconds);
+    }
+
+    if (containerUpdated) {
+      lastContainerUpdateTime = currentTimeMillis;
+    }
+    return report;
   }
 
   @Override
@@ -683,7 +768,7 @@ public class RMContainerImpl implements RMContainer {
       // Inform AppAttempt
       // container.getContainer() can return null when a RMContainer is a
       // reserved container
-      updateAttemptMetrics(container);
+      container.updateAppAttemptMetrics(false);
 
       container.eventHandler.handle(new RMAppAttemptContainerFinishedEvent(
         container.appAttemptId, finishedEvent.getRemoteContainerStatus(),
@@ -704,27 +789,6 @@ public class RMContainerImpl implements RMContainer {
             container, container.finishTime);
       }
 
-    }
-
-    private static void updateAttemptMetrics(RMContainerImpl container) {
-      Resource resource = container.getContainer().getResource();
-      RMAppAttempt rmAttempt = container.rmContext.getRMApps()
-          .get(container.getApplicationAttemptId().getApplicationId())
-          .getCurrentAppAttempt();
-
-      if (rmAttempt != null) {
-        long usedMillis = container.finishTime - container.creationTime;
-        rmAttempt.getRMAppAttemptMetrics()
-            .updateAggregateAppResourceUsage(resource, usedMillis);
-        // If this is a preempted container, update preemption metrics
-        if (ContainerExitStatus.PREEMPTED == container.finishedStatus
-            .getExitStatus()) {
-          rmAttempt.getRMAppAttemptMetrics()
-              .updatePreemptionInfo(resource, container);
-          rmAttempt.getRMAppAttemptMetrics()
-              .updateAggregatePreemptedAppResourceUsage(resource, usedMillis);
-        }
-      }
     }
   }
 
@@ -761,6 +825,11 @@ public class RMContainerImpl implements RMContainer {
       this.readLock.unlock();
     }
     return containerReport;
+  }
+
+  @Override
+  public ContainerResourceUsageReport getResourceUsageReport() {
+    return getCurrentContainerResourceUsage(false);
   }
 
   @Override

@@ -103,7 +103,6 @@ import org.apache.hadoop.yarn.server.resourcemanager.TestAMAuthorization.MockRMW
 import org.apache.hadoop.yarn.server.resourcemanager.TestAMAuthorization.MyContainerManager;
 import org.apache.hadoop.yarn.server.resourcemanager.nodelabels.NullRMNodeLabelsManager;
 import org.apache.hadoop.yarn.server.resourcemanager.nodelabels.RMNodeLabelsManager;
-import org.apache.hadoop.yarn.server.resourcemanager.placement.UserGroupMappingPlacementRule;
 import org.apache.hadoop.yarn.server.resourcemanager.rmapp.RMApp;
 import org.apache.hadoop.yarn.server.resourcemanager.rmapp.RMAppImpl;
 import org.apache.hadoop.yarn.server.resourcemanager.rmapp.RMAppMetrics;
@@ -2859,7 +2858,7 @@ public class TestCapacityScheduler {
     Thread.sleep(1000);
     AllocateResponse allocResponse = am1.schedule();
     ApplicationResourceUsageReport report =
-        rm.getResourceScheduler().getAppResourceUsageReport(
+        rm.getResourceScheduler().getAppActiveResourceUsageReport(
           attempt1.getAppAttemptId());
     Assert.assertEquals(0, allocResponse.getAllocatedContainers().size());
     Assert.assertEquals(0, report.getNumReservedContainers());
@@ -2872,7 +2871,7 @@ public class TestCapacityScheduler {
       allocResponse = am1.schedule();
     }
     report =
-        rm.getResourceScheduler().getAppResourceUsageReport(
+        rm.getResourceScheduler().getAppActiveResourceUsageReport(
           attempt1.getAppAttemptId());
     Assert.assertEquals(1, allocResponse.getAllocatedContainers().size());
     Assert.assertEquals(0, report.getNumReservedContainers());

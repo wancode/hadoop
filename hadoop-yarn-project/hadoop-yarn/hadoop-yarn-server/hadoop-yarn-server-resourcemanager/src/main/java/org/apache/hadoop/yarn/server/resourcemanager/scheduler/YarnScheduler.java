@@ -171,7 +171,7 @@ public interface YarnScheduler extends EventHandler<SchedulerEvent> {
    */
   @LimitedPrivate("yarn")
   @Evolving
-  ApplicationResourceUsageReport getAppResourceUsageReport(
+  ApplicationResourceUsageReport getAppActiveResourceUsageReport(
       ApplicationAttemptId appAttemptId);
   
   /**

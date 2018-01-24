@@ -934,15 +934,18 @@ public class RMAppAttemptImpl implements RMAppAttempt, Recoverable {
     this.readLock.lock();
     try {
       ApplicationResourceUsageReport report =
-          scheduler.getAppResourceUsageReport(this.getAppAttemptId());
+          scheduler.getAppActiveResourceUsageReport(this.getAppAttemptId());
       if (report == null) {
         report = RMServerUtils.DUMMY_APPLICATION_RESOURCE_USAGE_REPORT;
       }
       AggregateAppResourceUsage resUsage =
           this.attemptMetrics.getAggregateAppResourceUsage();
-      report.setResourceSecondsMap(resUsage.getResourceUsageSecondsMap());
+      report.setGuaranteedResourceSecondsMap(
+          resUsage.getGuaranteedResourceUsageSecondsMap());
       report.setPreemptedResourceSecondsMap(
           this.attemptMetrics.getPreemptedResourceSecondsMap());
+      report.setOpportunisticResourceSecondsMap(
+          resUsage.getOpportunisticResourceSecondsMap());
       return report;
     } finally {
       this.readLock.unlock();
@@ -979,10 +982,12 @@ public class RMAppAttemptImpl implements RMAppAttempt, Recoverable {
     this.finalStatus = attemptState.getFinalApplicationStatus();
     this.startTime = attemptState.getStartTime();
     this.finishTime = attemptState.getFinishTime();
-    this.attemptMetrics
-        .updateAggregateAppResourceUsage(attemptState.getResourceSecondsMap());
+    this.attemptMetrics.updateAggregateAppGuaranteedResourceUsage(
+        attemptState.getGuaranteedResourceSecondsMap());
     this.attemptMetrics.updateAggregatePreemptedAppResourceUsage(
         attemptState.getPreemptedResourceSecondsMap());
+    this.attemptMetrics.updateAggregateAppOpportunisticResourceUsage(
+        attemptState.getOpportunisticResourceSecondsMap());
   }
 
   public void transferStateFromAttempt(RMAppAttempt attempt) {
@@ -1360,9 +1365,11 @@ public class RMAppAttemptImpl implements RMAppAttempt, Recoverable {
     ApplicationAttemptStateData attemptState = ApplicationAttemptStateData
         .newInstance(applicationAttemptId, getMasterContainer(),
             rmStore.getCredentialsFromAppAttempt(this), startTime,
-            stateToBeStored, finalTrackingUrl, diags.toString(), finalStatus, exitStatus,
-            getFinishTime(), resUsage.getResourceUsageSecondsMap(),
-            this.attemptMetrics.getPreemptedResourceSecondsMap());
+            stateToBeStored, finalTrackingUrl, diags.toString(), finalStatus,
+            exitStatus, getFinishTime(),
+            resUsage.getGuaranteedResourceUsageSecondsMap(),
+            this.attemptMetrics.getPreemptedResourceSecondsMap(),
+            resUsage.getOpportunisticResourceSecondsMap());
     LOG.info("Updating application attempt " + applicationAttemptId
         + " with final state: " + targetedFinalState + ", and exit status: "
         + exitStatus);
