@@ -918,7 +918,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
 
     @Override
     public Set<NodeLabel> getNodeLabelsForRegistration() {
-      Set<NodeLabel> nodeLabels = nodeLabelsProvider.getNodeLabels();
+      Set<NodeLabel> nodeLabels = nodeLabelsProvider.getDescriptors();
       nodeLabels = (null == nodeLabels)
           ? CommonNodeLabelsManager.EMPTY_NODELABEL_SET : nodeLabels;
       previousNodeLabels = nodeLabels;
@@ -953,7 +953,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
     @Override
     public Set<NodeLabel> getNodeLabelsForHeartbeat() {
       Set<NodeLabel> nodeLabelsForHeartbeat =
-          nodeLabelsProvider.getNodeLabels();
+          nodeLabelsProvider.getDescriptors();
       // if the provider returns null then consider empty labels are set
       nodeLabelsForHeartbeat = (nodeLabelsForHeartbeat == null)
           ? CommonNodeLabelsManager.EMPTY_NODELABEL_SET
